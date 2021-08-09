@@ -14,8 +14,9 @@ func MakeReplicaReaderHandler(client *containerd.Client) func(w http.ResponseWri
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		functionName := vars["name"]
+		lookupNamespace := getRequestNamespace(readNamespaceFromQuery(r))
 
-		if f, err := GetFunction(client, functionName); err == nil {
+		if f, err := GetFunction(client, functionName, lookupNamespace); err == nil {
 			found := types.FunctionStatus{
 				Name:              functionName,
 				AvailableReplicas: uint64(f.replicas),

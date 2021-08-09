@@ -20,7 +20,6 @@ import (
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/openfaas/faas-provider/types"
-	faasd "github.com/openfaas/faasd/pkg"
 	cninetwork "github.com/openfaas/faasd/pkg/cninetwork"
 	"github.com/openfaas/faasd/pkg/service"
 	"github.com/pkg/errors"
@@ -52,15 +51,17 @@ func MakeDeployHandler(client *containerd.Client, cni gocni.CNI, secretMountPath
 			return
 		}
 
-		err = validateSecrets(secretMountPath, req.Secrets)
+		namespace := getRequestNamespace(req.Namespace)
+		namespaceSecretMountPath := getNamespaceSecretMountPath(secretMountPath, namespace)
+		err = validateSecrets(namespaceSecretMountPath, req.Secrets)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 
 		name := req.Service
-		ctx := namespaces.WithNamespace(context.Background(), faasd.FunctionNamespace)
+		ctx := namespaces.WithNamespace(context.Background(), namespace)
 
-		deployErr := deploy(ctx, req, client, cni, secretMountPath, alwaysPull)
+		deployErr := deploy(ctx, req, client, cni, namespaceSecretMountPath, alwaysPull)
 		if deployErr != nil {
 			log.Printf("[Deploy] error deploying %s, error: %s\n", name, deployErr)
 			http.Error(w, deployErr.Error(), http.StatusBadRequest)

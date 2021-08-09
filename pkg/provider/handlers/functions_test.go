@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/opencontainers/runtime-spec/specs-go"
 	"reflect"
 	"testing"
+
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 func Test_BuildLabelsAndAnnotationsFromServiceSpec_Annotations(t *testing.T) {
@@ -80,6 +81,28 @@ func Test_ProcessEnvToEnvVars(t *testing.T) {
 			if fprocess != tc.fprocess {
 				t.Fatalf("expected fprocess: %s, got: %s", tc.fprocess, got)
 
+			}
+		})
+	}
+}
+
+func Test_findNamespace(t *testing.T) {
+	type test struct {
+		Name            string
+		foundNamespaces []string
+		namespace       string
+		Expected        bool
+	}
+	tests := []test{
+		{Name: "Namespace Found", namespace: "fn", foundNamespaces: []string{"fn", "openfaas-fn"}, Expected: true},
+		{Name: "namespace Not Found", namespace: "fn", foundNamespaces: []string{"openfaas-fn"}, Expected: false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.Name, func(t *testing.T) {
+			got := findNamespace(tc.namespace, tc.foundNamespaces)
+			if got != tc.Expected {
+				t.Fatalf("expected %t, got %t", tc.Expected, got)
 			}
 		})
 	}

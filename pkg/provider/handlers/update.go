@@ -13,7 +13,6 @@ import (
 	gocni "github.com/containerd/go-cni"
 	"github.com/openfaas/faas-provider/types"
 
-	faasd "github.com/openfaas/faasd/pkg"
 	"github.com/openfaas/faasd/pkg/cninetwork"
 	"github.com/openfaas/faasd/pkg/service"
 )
@@ -41,8 +40,10 @@ func MakeUpdateHandler(client *containerd.Client, cni gocni.CNI, secretMountPath
 			return
 		}
 		name := req.Service
+		namespace := getRequestNamespace(req.Namespace)
+		namespaceSecretMountPath := getNamespaceSecretMountPath(secretMountPath, namespace)
 
-		function, err := GetFunction(client, name)
+		function, err := GetFunction(client, name, namespace)
 		if err != nil {
 			msg := fmt.Sprintf("service %s not found", name)
 			log.Printf("[Update] %s\n", msg)
@@ -50,12 +51,12 @@ func MakeUpdateHandler(client *containerd.Client, cni gocni.CNI, secretMountPath
 			return
 		}
 
-		err = validateSecrets(secretMountPath, req.Secrets)
+		err = validateSecrets(namespaceSecretMountPath, req.Secrets)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 
-		ctx := namespaces.WithNamespace(context.Background(), faasd.FunctionNamespace)
+		ctx := namespaces.WithNamespace(context.Background(), namespace)
 
 		if _, err := prepull(ctx, req, client, alwaysPull); err != nil {
 			log.Printf("[Update] error with pre-pull: %s, %s\n", name, err)
@@ -78,7 +79,7 @@ func MakeUpdateHandler(client *containerd.Client, cni gocni.CNI, secretMountPath
 		// The pull has already been done in prepull, so we can force this pull to "false"
 		pull := false
 
-		if err := deploy(ctx, req, client, cni, secretMountPath, pull); err != nil {
+		if err := deploy(ctx, req, client, cni, namespaceSecretMountPath, pull); err != nil {
 			log.Printf("[Update] error deploying %s, error: %s\n", name, err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
