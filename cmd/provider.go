@@ -28,6 +28,7 @@ func makeProviderCmd() *cobra.Command {
 	}
 
 	command.Flags().String("pull-policy", "Always", `Set to "Always" to force a pull of images upon deployment, or "IfNotPresent" to try to use a cached image.`)
+	command.Flags().String("nameserver", "8.8.8.8", `Set to the DNS server you want to use for resolving DNS queries`)
 
 	command.RunE = func(_ *cobra.Command, _ []string) error {
 
@@ -39,6 +40,11 @@ func makeProviderCmd() *cobra.Command {
 		alwaysPull := false
 		if pullPolicy == "Always" {
 			alwaysPull = true
+		}
+
+		nameserver, flagErr := command.Flags().GetString("nameserver")
+		if flagErr != nil {
+			return flagErr
 		}
 
 		config, providerConfig, err := config.ReadFromEnv(types.OsEnv{})
@@ -62,7 +68,7 @@ func makeProviderCmd() *cobra.Command {
 		}
 
 		writeResolvErr := ioutil.WriteFile(path.Join(wd, "resolv.conf"),
-			[]byte(`nameserver 8.8.8.8`), workingDirectoryPermission)
+			[]byte(fmt.Sprintf("nameserver %s", nameserver)), workingDirectoryPermission)
 
 		if writeResolvErr != nil {
 			return fmt.Errorf("cannot write resolv.conf file: %s", writeResolvErr)
