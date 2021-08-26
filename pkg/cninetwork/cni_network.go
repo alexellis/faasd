@@ -42,7 +42,7 @@ const (
 	defaultBridgeName = "openfaas0"
 
 	// defaultSubnet is the default subnet used in the defaultCNIConf -- this value is set to not collide with common container networking subnets:
-	defaultSubnet = "10.62.0.0/16"
+	defaultSubnet = "10.63.0.0/16"
 
 	// defaultIfPrefix is the interface name to be created in the container
 	defaultIfPrefix = "eth"
@@ -179,7 +179,7 @@ func GetIPAddress(container string, PID uint32) (string, error) {
 //
 // Example:
 //
-// /var/run/cni/openfaas-cni-bridge/10.62.0.2
+// /var/run/cni/openfaas-cni-bridge/10.63.0.2
 //
 // nats-621
 // eth1

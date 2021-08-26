@@ -10,7 +10,7 @@ import (
 func Test_isCNIResultForPID_Found(t *testing.T) {
 	body := `nats-621
 eth1`
-	fileName := `10.62.0.2`
+	fileName := `10.63.0.2`
 	container := "nats"
 	PID := uint32(621)
 	fullPath := filepath.Join(os.TempDir(), fileName)
@@ -38,7 +38,7 @@ eth1`
 func Test_isCNIResultForPID_NoMatch(t *testing.T) {
 	body := `nats-621
 eth1`
-	fileName := `10.62.0.3`
+	fileName := `10.63.0.3`
 	container := "gateway"
 	PID := uint32(621)
 	fullPath := filepath.Join(os.TempDir(), fileName)

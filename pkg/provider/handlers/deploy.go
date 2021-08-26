@@ -140,10 +140,7 @@ func deploy(ctx context.Context, req types.FunctionDeployment, client *container
 		memory.Limit = &v
 	}
 
-	container, err := client.NewContainer(
-		ctx,
-		name,
-		containerd.WithImage(image),
+	ctrOps := []containerd.NewContainerOpts{containerd.WithImage(image),
 		containerd.WithSnapshotter(snapshotter),
 		containerd.WithNewSnapshot(name+"-snapshot", image),
 		containerd.WithNewSpec(oci.WithImageConfig(image),
@@ -151,8 +148,18 @@ func deploy(ctx context.Context, req types.FunctionDeployment, client *container
 			oci.WithCapabilities([]string{"CAP_NET_RAW"}),
 			oci.WithMounts(mounts),
 			oci.WithEnv(envs),
+			oci.WithLinuxDevice("/dev/kvm", "rmw"),
 			withMemory(memory)),
-		containerd.WithContainerLabels(labels),
+		containerd.WithContainerLabels(labels)}
+
+	if v, ok := os.LookupEnv("FUNCTION_RUNTIME"); ok && len(v) > 0 {
+		ctrOps = append(ctrOps, containerd.WithRuntime(v, nil))
+	}
+
+	container, err := client.NewContainer(
+		ctx,
+		name,
+		ctrOps...,
 	)
 
 	if err != nil {
