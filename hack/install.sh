@@ -39,6 +39,10 @@ has_apt_get() {
   [ -n "$(command -v apt-get)" ]
 }
 
+has_pacman() {
+  [ -n "$(command -v pacman)" ]
+}
+
 install_required_packages() {
   if $(has_apt_get); then
     $SUDO apt-get update -y
@@ -46,8 +50,11 @@ install_required_packages() {
   elif $(has_yum); then
     $SUDO yum check-update -y
     $SUDO yum install -y curl runc
+  elif $(has_pacman); then
+    $SUDO pacman -Syy
+    $SUDO pacman -Sy curl runc bridge-utils
   else
-    fatal "Could not find apt-get or yum. Cannot install dependencies on this OS."
+    fatal "Could not find apt-get, yum, or pacman. Cannot install dependencies on this OS."
     exit 1
   fi
 }
