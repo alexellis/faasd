@@ -2,7 +2,13 @@
 
 1) [Sign up to DigitalOcean](https://www.digitalocean.com/?refcode=2962aa9e56a1&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=CopyPaste)
 2) [Download Terraform](https://www.terraform.io)
-3) Clone this gist using the URL from the address bar
+3) Download the [cloud-config.tpl](cloud-config.tpl), [main.tf](main.tf) and [main.tfvars](main.tfvars) files.
+   Or directly from the terminal using `curl`:
+   ```bash
+   $ curl -SLso main.tf https://raw.githubusercontent.com/openfaas/faasd/master/docs/bootstrap/digitalocean-terraform/main.tf
+   $ curl -SLso main.tfvars https://raw.githubusercontent.com/openfaas/faasd/master/docs/bootstrap/digitalocean-terraform/main.tfvars
+   $ curl -SLso cloud-config.tpl https://raw.githubusercontent.com/openfaas/faasd/master/docs/bootstrap/digitalocean-terraform/cloud-config.tpl
+   ```
 4) Run `terraform init`
 5) Configure terraform variables as needed by updating the `main.tfvars` file:
 
