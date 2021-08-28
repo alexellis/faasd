@@ -5,6 +5,7 @@ Description=faasd-provider
 MemoryLimit=500M
 Environment="secret_mount_path={{.SecretMountPath}}"
 Environment="basic_auth=true"
+Environment="hosts_dir=/var/lib/faasd"
 ExecStart=/usr/local/bin/faasd provider
 Restart=on-failure
 RestartSec=10s
