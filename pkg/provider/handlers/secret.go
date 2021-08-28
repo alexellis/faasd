@@ -15,6 +15,7 @@ import (
 )
 
 const secretFilePermission = 0644
+const secretDirPermission = 0755
 
 func MakeSecretHandler(c *containerd.Client, mountPath string) func(w http.ResponseWriter, r *http.Request) {
 
@@ -46,6 +47,10 @@ func MakeSecretHandler(c *containerd.Client, mountPath string) func(w http.Respo
 }
 
 func listSecrets(c *containerd.Client, w http.ResponseWriter, r *http.Request, mountPath string) {
+
+	lookupNamespace := getRequestNamespace(readNamespaceFromQuery(r))
+	mountPath = getNamespaceSecretMountPath(mountPath, lookupNamespace)
+
 	files, err := ioutil.ReadDir(mountPath)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -54,7 +59,7 @@ func listSecrets(c *containerd.Client, w http.ResponseWriter, r *http.Request, m
 
 	secrets := []types.Secret{}
 	for _, f := range files {
-		secrets = append(secrets, types.Secret{Name: f.Name()})
+		secrets = append(secrets, types.Secret{Name: f.Name(), Namespace: lookupNamespace})
 	}
 
 	bytesOut, _ := json.Marshal(secrets)
@@ -63,6 +68,16 @@ func listSecrets(c *containerd.Client, w http.ResponseWriter, r *http.Request, m
 
 func createSecret(c *containerd.Client, w http.ResponseWriter, r *http.Request, mountPath string) {
 	secret, err := parseSecret(r)
+	if err != nil {
+		log.Printf("[secret] error %s", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	namespace := getRequestNamespace(secret.Namespace)
+	mountPath = getNamespaceSecretMountPath(mountPath, namespace)
+
+	err = os.MkdirAll(mountPath, secretDirPermission)
 	if err != nil {
 		log.Printf("[secret] error %s", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -85,6 +100,9 @@ func deleteSecret(c *containerd.Client, w http.ResponseWriter, r *http.Request, 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	namespace := getRequestNamespace(readNamespaceFromQuery(r))
+	mountPath = getNamespaceSecretMountPath(mountPath, namespace)
 
 	err = os.Remove(path.Join(mountPath, secret.Name))
 

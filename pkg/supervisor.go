@@ -79,7 +79,7 @@ func NewSupervisor(sock string) (*Supervisor, error) {
 }
 
 func (s *Supervisor) Start(svcs []Service) error {
-	ctx := namespaces.WithNamespace(context.Background(), faasdNamespace)
+	ctx := namespaces.WithNamespace(context.Background(), FaasdNamespace)
 
 	wd, _ := os.Getwd()
 
@@ -243,7 +243,7 @@ func (s *Supervisor) Close() {
 }
 
 func (s *Supervisor) Remove(svcs []Service) error {
-	ctx := namespaces.WithNamespace(context.Background(), faasdNamespace)
+	ctx := namespaces.WithNamespace(context.Background(), FaasdNamespace)
 
 	for _, svc := range svcs {
 		err := cninetwork.DeleteCNINetwork(ctx, s.cni, s.client, svc.Name)

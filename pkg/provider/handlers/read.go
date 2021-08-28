@@ -13,8 +13,10 @@ func MakeReadHandler(client *containerd.Client) func(w http.ResponseWriter, r *h
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		lookupNamespace := getRequestNamespace(readNamespaceFromQuery(r))
+
 		res := []types.FunctionStatus{}
-		fns, err := ListFunctions(client)
+		fns, err := ListFunctions(client, lookupNamespace)
 		if err != nil {
 			log.Printf("[Read] error listing functions. Error: %s\n", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)

@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -94,7 +93,7 @@ func makeProviderCmd() *cobra.Command {
 			UpdateHandler:        handlers.MakeUpdateHandler(client, cni, userSecretPath, alwaysPull),
 			HealthHandler:        func(w http.ResponseWriter, r *http.Request) {},
 			InfoHandler:          handlers.MakeInfoHandler(Version, GitCommit),
-			ListNamespaceHandler: listNamespaces(),
+			ListNamespaceHandler: handlers.MakeNamespacesLister(client),
 			SecretHandler:        handlers.MakeSecretHandler(client, userSecretPath),
 			LogHandler:           logs.NewLogHandlerFunc(faasdlogs.New(), config.ReadTimeout),
 		}
@@ -105,12 +104,4 @@ func makeProviderCmd() *cobra.Command {
 	}
 
 	return command
-}
-
-func listNamespaces() func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		list := []string{""}
-		out, _ := json.Marshal(list)
-		w.Write(out)
-	}
 }

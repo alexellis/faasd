@@ -11,9 +11,8 @@ import (
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/namespaces"
-	"github.com/openfaas/faasd/pkg/cninetwork"
-
 	faasd "github.com/openfaas/faasd/pkg"
+	"github.com/openfaas/faasd/pkg/cninetwork"
 )
 
 type Function struct {
@@ -32,8 +31,8 @@ type Function struct {
 }
 
 // ListFunctions returns a map of all functions with running tasks on namespace
-func ListFunctions(client *containerd.Client) (map[string]*Function, error) {
-	ctx := namespaces.WithNamespace(context.Background(), faasd.FunctionNamespace)
+func ListFunctions(client *containerd.Client, namespace string) (map[string]*Function, error) {
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 	functions := make(map[string]*Function)
 
 	containers, err := client.Containers(ctx)
@@ -43,7 +42,7 @@ func ListFunctions(client *containerd.Client) (map[string]*Function, error) {
 
 	for _, c := range containers {
 		name := c.ID()
-		f, err := GetFunction(client, name)
+		f, err := GetFunction(client, name, namespace)
 		if err != nil {
 			log.Printf("error getting function %s: ", name)
 			return functions, err
@@ -55,8 +54,8 @@ func ListFunctions(client *containerd.Client) (map[string]*Function, error) {
 }
 
 // GetFunction returns a function that matches name
-func GetFunction(client *containerd.Client, name string) (Function, error) {
-	ctx := namespaces.WithNamespace(context.Background(), faasd.FunctionNamespace)
+func GetFunction(client *containerd.Client, name string, namespace string) (Function, error) {
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
 	fn := Function{}
 
 	c, err := client.LoadContainer(ctx, name)
@@ -92,7 +91,7 @@ func GetFunction(client *containerd.Client, name string) (Function, error) {
 	secrets := readSecretsFromMounts(spec.Mounts)
 
 	fn.name = containerName
-	fn.namespace = faasd.FunctionNamespace
+	fn.namespace = namespace
 	fn.image = image.Name()
 	fn.labels = labels
 	fn.annotations = annotations
@@ -180,4 +179,42 @@ func buildLabelsAndAnnotations(ctrLabels map[string]string) (map[string]string, 
 	}
 
 	return labels, annotations
+}
+
+func ListNamespaces(client *containerd.Client) []string {
+	set := []string{}
+	store := client.NamespaceService()
+	namespaces, err := store.List(context.Background())
+	if err != nil {
+		log.Printf("Error listing namespaces: %s", err.Error())
+		set = append(set, faasd.FunctionNamespace)
+		return set
+	}
+
+	for _, namespace := range namespaces {
+		labels, err := store.Labels(context.Background(), namespace)
+		if err != nil {
+			log.Printf("Error listing label for namespace %s: %s", namespace, err.Error())
+			continue
+		}
+
+		if _, found := labels["openfaas"]; found {
+			set = append(set, namespace)
+		}
+
+		if !findNamespace(faasd.FunctionNamespace, set) {
+			set = append(set, faasd.FunctionNamespace)
+		}
+	}
+
+	return set
+}
+
+func findNamespace(target string, items []string) bool {
+	for _, n := range items {
+		if n == target {
+			return true
+		}
+	}
+	return false
 }

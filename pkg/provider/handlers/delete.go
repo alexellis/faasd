@@ -13,7 +13,6 @@ import (
 	gocni "github.com/containerd/go-cni"
 	"github.com/openfaas/faas/gateway/requests"
 
-	faasd "github.com/openfaas/faasd/pkg"
 	cninetwork "github.com/openfaas/faasd/pkg/cninetwork"
 	"github.com/openfaas/faasd/pkg/service"
 )
@@ -41,9 +40,11 @@ func MakeDeleteHandler(client *containerd.Client, cni gocni.CNI) func(w http.Res
 			return
 		}
 
+		lookupNamespace := getRequestNamespace(readNamespaceFromQuery(r))
+
 		name := req.FunctionName
 
-		function, err := GetFunction(client, name)
+		function, err := GetFunction(client, name, lookupNamespace)
 		if err != nil {
 			msg := fmt.Sprintf("service %s not found", name)
 			log.Printf("[Delete] %s\n", msg)
@@ -51,7 +52,7 @@ func MakeDeleteHandler(client *containerd.Client, cni gocni.CNI) func(w http.Res
 			return
 		}
 
-		ctx := namespaces.WithNamespace(context.Background(), faasd.FunctionNamespace)
+		ctx := namespaces.WithNamespace(context.Background(), lookupNamespace)
 
 		// TODO: this needs to still happen if the task is paused
 		if function.replicas != 0 {
