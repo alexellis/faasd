@@ -98,7 +98,7 @@ func makeProviderCmd() *cobra.Command {
 			DeployHandler:        handlers.MakeDeployHandler(client, cni, baseUserSecretsPath, alwaysPull),
 			FunctionReader:       handlers.MakeReadHandler(client),
 			ReplicaReader:        handlers.MakeReplicaReaderHandler(client),
-			ReplicaUpdater:       handlers.MakeReplicaUpdateHandler(client, cni),
+			ReplicaUpdater:       handlers.MakeReplicaUpdateHandler(client, cni, invokeResolver),
 			UpdateHandler:        handlers.MakeUpdateHandler(client, cni, baseUserSecretsPath, alwaysPull),
 			HealthHandler:        func(w http.ResponseWriter, r *http.Request) {},
 			InfoHandler:          handlers.MakeInfoHandler(Version, GitCommit),
